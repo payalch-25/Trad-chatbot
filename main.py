@@ -4,7 +4,11 @@ from rapidfuzz import fuzz, process
 
 
 def traditional_chatbot():
-    print("Chatbot: Hi! I'm a traditional chatbot. Type 'exit' to quit.")
+    print("Chatbot: Hi! I'm a traditional chatbot. Type 'bye' to quit.")
+
+    #conversation state
+    state = None  # Tracks the current state
+    order_details = {}  # To store pizza order details
 
     intents = {
         "greeting": ["hello", "hi", "hey", "greetings", "good morning", "good afternoon"],
@@ -83,8 +87,13 @@ def traditional_chatbot():
     while True:
         user_input = input("You: ").strip().lower()
 
-        if user_input == "exit":
-            print("Chatbot: Bye!")
+        match_result = process.extractOne(user_input, intent_phrases.keys(), scorer=fuzz.ratio)
+        match, similarity = match_result[0], match_result[1]
+
+        if user_input == "bye":
+            matched_intent = intent_phrases[match]
+            response = random.choice(responses[matched_intent])  # Choose a random response from the intent
+            print(f"Chatbot: {response}")
             break
 
         if user_input == "faq":
@@ -107,14 +116,41 @@ def traditional_chatbot():
             print(f"The current time is {time.strftime('%H:%M:%S')}.")
             continue
 
-        # Find the closest match using RapidFuzz
-        match_result = process.extractOne(user_input, intent_phrases.keys(), scorer=fuzz.ratio)
-        match, similarity = match_result[0], match_result[1]
-
-        if similarity >= 80:  # Threshold for considering a match
+        if similarity >= 50:  # Threshold for considering a match
             matched_intent = intent_phrases[match]  # Get the intent for the matched phrase
             response = random.choice(responses[matched_intent])  # Choose a random response from the intent
             print(f"Chatbot: {response}")
+        
+        else:
+            print("Chatbot: Sorry, I didn't understand that.")
+
+        # Handle user input based on the state
+        if state is None:  # General state
+            if "order pizza" in user_input or "i want pizza" in user_input:
+                print("Chatbot: Great! What toppings would you like?")
+                state = "order_pizza"  # Transition to pizza ordering state
+
+        elif state == "order_pizza":  # Pizza toppings state
+            order_details["toppings"] = user_input
+            print(f"Chatbot: Got it. You want {user_input} toppings. What size would you like? (small, medium, large)")
+            state = "order_size"  # Transition to size selection state
+
+        elif state == "order_size":  # Pizza size state
+            if user_input in ["small", "medium", "large"]:
+                order_details["size"] = user_input
+                print(f"Chatbot: A {user_input} pizza with {order_details['toppings']} toppings. Is that correct? (yes/no)")
+                state = "confirm_order"  # Transition to confirmation state
+            else:
+                print("Chatbot: Please choose a valid size: small, medium, or large.")
+
+        elif state == "confirm_order":  # Order confirmation state
+            if user_input == "yes":
+                print(f"Chatbot: Great! Your {order_details['size']} pizza with {order_details['toppings']} toppings is on its way!")
+                state = None  # Reset state for a new conversation
+            elif user_input == "no":
+                print("Chatbot: Sorry about that. Let's start over. What toppings would you like?")
+                state = "order_pizza"  # Restart order flow
+
         else:
             print("Chatbot: Sorry, I didn't understand that.")
 
