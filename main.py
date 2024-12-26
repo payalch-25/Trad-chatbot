@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 import random
 from rapidfuzz import fuzz, process
 
@@ -12,26 +13,24 @@ def traditional_chatbot():
 
     intents = {
         "greeting": ["hello", "hi", "hey", "greetings", "good morning", "good afternoon"],
-        "farewell": ["bye", "goodbye", "see you", "take care"],
         "status": ["how are you", "how's it going", "what's up"],
         "joke": ["tell me a joke", "make me laugh","say something funny"],
         "weather": ["what is the weather like", "how is the weather", "is it sunny outside"],
         "food": ["do you like pizza", "what is your favorite food", "do you eat"]
     }
+    hour = datetime.now().hour
+    if hour < 12:
+        g = "Good Morning"
+    elif hour < 18:
+        g = "Good afternoon!"
+    else:
+        g ="Good evening!"
 
     greetings = [
-        "Hi there!", "Hello!", 
-        "Hey! How can I assist you?", 
+        f"Hi there! {g}", f"Hello! {g}", 
+        f"Hey! {g} How can I assist you?", 
         "Greetings! How can I help?", 
-        "Good to see you!"
-    ]
-
-    farewells = [
-        "Goodbye! Have a nice day!",
-        "See you later! Take care!",
-        "Bye! Hope to chat with you again!",
-        "Farewell! Stay safe!",
-        "Take care! Have a great day!"
+        f"{g} Good to see you!"
     ]
 
     status_responses = [
@@ -66,7 +65,6 @@ def traditional_chatbot():
 
     responses = {
         "greeting": greetings,
-        "farewell": farewells,
         "status": status_responses,
         "joke": jokes,
         "weather": weather_responses,
@@ -91,9 +89,15 @@ def traditional_chatbot():
         match, similarity = match_result[0], match_result[1]
 
         if user_input == "bye":
-            matched_intent = intent_phrases[match]
-            response = random.choice(responses[matched_intent])  # Choose a random response from the intent
-            print(f"Chatbot: {response}")
+            print("Chatbot: Was this conversation helpful? (yes/no)")
+            user_input = input("You: ").strip().lower()
+            if user_input == "yes":
+                print("Chatbot: Thanks for your feedback!")
+            else:
+                print("Chatbot: I'm sorry, tell me what's your problem, I’ll do my best to help!")
+                user_input = input("You: ").strip().lower()
+                print("chatbot: I'll improve next time, Thanks for your feedback!")
+
             break
 
         if user_input == "faq":
@@ -114,6 +118,9 @@ def traditional_chatbot():
 
         if user_input == "time":
             print(f"The current time is {time.strftime('%H:%M:%S')}.")
+            continue
+        if user_input == "date":
+            print(f"Today's date is: {time.strftime('%Y-%m-%d')}")
             continue
 
         if similarity >= 50:  # Threshold for considering a match
