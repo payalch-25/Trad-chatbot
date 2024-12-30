@@ -123,19 +123,16 @@ def traditional_chatbot():
             print(f"Today's date is: {time.strftime('%Y-%m-%d')}")
             continue
 
+        # Handle user input based on the state
+        if state is None:  # General state
+            if "order pizza" in user_input or "i want pizza" in user_input or "pizza" in user_input:
+                print("Chatbot: Great! What toppings would you like?")
+                state = "order_pizza"  # Transition to pizza ordering state
+                continue
         if similarity >= 50:  # Threshold for considering a match
             matched_intent = intent_phrases[match]  # Get the intent for the matched phrase
             response = random.choice(responses[matched_intent])  # Choose a random response from the intent
             print(f"Chatbot: {response}")
-        
-        else:
-            print("Chatbot: Sorry, I didn't understand that.")
-
-        # Handle user input based on the state
-        if state is None:  # General state
-            if "order pizza" in user_input or "i want pizza" in user_input:
-                print("Chatbot: Great! What toppings would you like?")
-                state = "order_pizza"  # Transition to pizza ordering state
 
         elif state == "order_pizza":  # Pizza toppings state
             order_details["toppings"] = user_input
