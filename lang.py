@@ -5,8 +5,7 @@ from rapidfuzz import fuzz, process
 
 
 def traditional_chatbot():
-    print("Chatbot: Choose an option:\n 1. Know about me\n 2. order pizza\n 3. Exit")
-
+    print("Chatbot: Hi! I'm a traditional chatbot. Type 'bye' to quit.")
 
     #conversation state
     state = None  # Tracks the current state
@@ -87,14 +86,9 @@ def traditional_chatbot():
         user_input = input("You: ").strip().lower()
 
         match_result = process.extractOne(user_input, intent_phrases.keys(), scorer=fuzz.ratio)
-        match, similarity = match_result[0], match_result[1] 
+        match, similarity = match_result[0], match_result[1]
 
-        if similarity >= 50:  # Threshold for considering a match
-            matched_intent = intent_phrases[match]  # Get the intent for the matched phrase
-            response = random.choice(responses[matched_intent])  # Choose a random response from the intent
-            print(f"Chatbot: {response}")    
-
-        if "bye" in user_input or "3" in user_input:
+        if user_input == "bye":
             print("Chatbot: Was this conversation helpful? (yes/no)")
             user_input = input("You: ").strip().lower()
             if user_input == "yes":
@@ -103,21 +97,21 @@ def traditional_chatbot():
                 print("Chatbot: I'm sorry, tell me what's your problem, I’ll do my best to help!")
                 user_input = input("You: ").strip().lower()
                 print("chatbot: I'll improve next time, Thanks for your feedback!")
+
             break
 
         if user_input == "faq":
             print("Chatbot: Here are some frequently asked questions:")
             for question in faqs.keys(): 
                 print(f"- {question}")
-            continue 
-
+            continue         
         
         if user_input in faqs:
             print(f"Chatbot: {faqs[user_input]}")
             continue
             
-        if "what is your name?" in user_input or "1" in user_input:
-            print("Chatbot: Hey I'm your chatbot, What is your name?")
+        if user_input == "what is your name?":
+            print("Hey I'm your chatbot, What is your name?")
             name = input("You: ")
             print(f"Chatbot: Hey, {name}!")
             continue
@@ -131,10 +125,14 @@ def traditional_chatbot():
 
         # Handle user input based on the state
         if state is None:  # General state
-            if "order pizza" in user_input or "i want pizza" in user_input or "pizza" in user_input or "2" in user_input:
+            if "order pizza" in user_input or "i want pizza" in user_input or "pizza" in user_input:
                 print("Chatbot: Great! What toppings would you like?")
                 state = "order_pizza"  # Transition to pizza ordering state
                 continue
+        if similarity >= 50:  # Threshold for considering a match
+            matched_intent = intent_phrases[match]  # Get the intent for the matched phrase
+            response = random.choice(responses[matched_intent])  # Choose a random response from the intent
+            print(f"Chatbot: {response}")
 
         elif state == "order_pizza":  # Pizza toppings state
             order_details["toppings"] = user_input
