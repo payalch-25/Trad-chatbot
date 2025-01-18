@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 import random
 from rapidfuzz import fuzz, process
+from textblob import TextBlob
 
 def traditional_chatbot():
     print(
@@ -13,8 +14,8 @@ def traditional_chatbot():
         " 5. Exit"
     )
 
-    state = None  # Tracks the current conversation state
-    order_details = {}  # Stores pizza order details
+    state = None
+    order_details = {}
 
     intents = {
         "greeting": ["hello", "hi", "hey", "greetings", "good morning", "good afternoon"],
@@ -22,6 +23,9 @@ def traditional_chatbot():
         "joke": ["tell me a joke", "make me laugh", "say something funny"],
         "weather": ["what is the weather like", "how is the weather", "is it sunny outside"],
         "food": ["do you like pizza", "what is your favorite food", "do you eat"],
+        "exit": ["bye", "goodbye", "exit", "quit", "5"],
+        "emotion_happy": ["happy", "glad", "joyful", "excited", "wonderful", "great"],
+        "emotion_sad": ["sad", "unhappy", "depressed", "down", "upset", "terrible"]
     }
 
     responses = {
@@ -38,16 +42,16 @@ def traditional_chatbot():
             "I'm just a program, but I'm feeling good! How are you?",
         ],
         "joke": [
-            "Why don’t skeletons fight each other? They don’t have the guts!",
+            "Why don't skeletons fight each other? They don't have the guts!",
             "Why did the scarecrow win an award? Because he was outstanding in his field!",
             "What do you call cheese that isn't yours? Nacho cheese!",
         ],
         "weather": [
-            "I can’t check live weather, but I hope it’s sunny where you are!",
-            "I’m not connected to a weather service, but it’s always a good day to chat!",
+            "I can't check live weather, but I hope it's sunny where you are!",
+            "I'm not connected to a weather service, but it's always a good day to chat!",
         ],
         "food": [
-            "I don’t eat, but if I could, I’d definitely try pizza. It sounds amazing!",
+            "I don't eat, but if I could, I'd definitely try pizza. It sounds amazing!",
             "Food is not my thing, but pizza seems to be a popular choice among humans.",
         ],
     }
@@ -55,38 +59,63 @@ def traditional_chatbot():
     faqs = {
         "what can you do?": "I can answer basic questions, provide general information, and assist with common tasks.",
         "how do i exit the chat?": "You can exit the chat anytime by typing 'bye' or choosing option 5.",
-        "what if you don’t understand my question?": "If I don’t understand your question, try rephrasing it.",
+        "what if you don't understand my question?": "If I don't understand your question, try rephrasing it.",
     }
 
     # Flatten intent phrases for fuzzy matching
     intent_phrases = {phrase: intent for intent, phrases in intents.items() for phrase in phrases}
 
+    def detect_emotion(text):
+        """Detect emotion from text using keyword matching"""
+        text_words = set(text.lower().split())
+        
+        # Check for explicit emotion statements
+        if "i am" in text.lower() or "i'm" in text.lower():
+            for word in intents["emotion_happy"]:
+                if word in text_words:
+                    return "positive"
+            for word in intents["emotion_sad"]:
+                if word in text_words:
+                    return "negative"
+        
+        # Check for single emotion words
+        for word in text_words:
+            if word in intents["emotion_happy"]:
+                return "positive"
+            if word in intents["emotion_sad"]:
+                return "negative"
+                
+        return None
+
     while True:
         user_input = input("You: ").strip().lower()
 
-        # Handle exit
-        if "bye" in user_input or "5" in user_input:
+        # Handle exit first
+        if any(exit_word in user_input for exit_word in intents["exit"]):
             print("Chatbot: Was this conversation helpful? (yes/no)")
             feedback = input("You: ").strip().lower()
-            print("Chatbot: Thanks for your feedback!" if feedback == "yes" else "Chatbot: I'll try to improve next time!")
+            if feedback.lower() in ["y", "yes"]:
+                print("Chatbot: Thanks for your feedback!")
+            else:
+                print("Chatbot: I'll try to improve next time!")
             break
 
-        # Handle FAQs
-        if user_input == "faq":
-            print("Chatbot: Here are some frequently asked questions:")
-            for question in faqs.keys():
-                print(f"- {question}")
+        # Handle emotion with improved detection
+        emotion = detect_emotion(user_input)
+        if emotion == "positive":
+            print("Chatbot: I see you're feeling good! 😊 How can I assist you?")
             continue
-        if user_input in faqs:
-            print(f"Chatbot: {faqs[user_input]}")
+        elif emotion == "negative":
+            print("Chatbot: I'm sorry to hear that you're feeling down. 😞 How can I help?")
             continue
 
-        # Handle fuzzy intent matching
+        # Handle fuzzy intent matching for greetings
         match_result = process.extractOne(user_input, intent_phrases.keys(), scorer=fuzz.ratio)
-        if match_result and match_result[1] >= 50:  # Match confidence threshold
+        if match_result and match_result[1] >= 70:
             intent = intent_phrases[match_result[0]]
-            print(f"Chatbot: {random.choice(responses[intent])}")
-            continue
+            if intent == "greeting":
+                print(f"Chatbot: {random.choice(responses['greeting'])}")
+                continue
 
         # Handle "Know about me"
         if "1" in user_input or "what is your name?" in user_input:
@@ -116,7 +145,7 @@ def traditional_chatbot():
         if state == "order_size":
             if user_input in ["small", "medium", "large"]:
                 order_details["size"] = user_input
-                print(f"Chatbot: A {user_input} pizza with {order_details['toppings']} toppings. Is that correct? (yes/no)")
+                print(f"Chatbot: A {order_details['size']} pizza with {order_details['toppings']} toppings. Is that correct? (yes/no)")
                 state = "confirm_order"
             else:
                 print("Chatbot: Please choose a valid size: small, medium, or large.")
@@ -135,8 +164,6 @@ def traditional_chatbot():
         # Fallback for unrecognized inputs
         print("Chatbot: Sorry, I didn't understand that. Could you please clarify?")
 
-
-# Helper Functions
 def greeting():
     """Dynamic greeting based on the time of day."""
     hour = datetime.now().hour
@@ -146,7 +173,6 @@ def greeting():
         return "Good Afternoon"
     else:
         return "Good Evening"
-
 
 def chatbot_guesses():
     """Guessing game where the chatbot guesses the number."""
@@ -163,19 +189,22 @@ def chatbot_guesses():
             low = guess + 1
     print(f"Chatbot: Yay! I guessed your number {guess} correctly!")
 
-
 def user_guesses():
     """Guessing game where the user guesses the number."""
     print("Chatbot: I'm thinking of a number between 1 and 100. Try to guess it!")
     number = random.randint(1, 100)
-    guess = 0
-    while guess != number:
-        guess = int(input("You: "))
-        if guess < number:
-            print("Chatbot: Too low. Try again!")
-        elif guess > number:
-            print("Chatbot: Too high. Try again!")
-    print(f"Chatbot: Congratulations! You guessed the number {number}!")
+    while True:
+        try:
+            guess = int(input("You: "))
+            if guess < number:
+                print("Chatbot: Too low. Try again!")
+            elif guess > number:
+                print("Chatbot: Too high. Try again!")
+            else:
+                print(f"Chatbot: Congratulations! You guessed the number {number}!")
+                break
+        except ValueError:
+            print("Chatbot: Please enter a valid number.")
 
-# Run the chatbot
-traditional_chatbot()
+if __name__ == "__main__":
+    traditional_chatbot()
