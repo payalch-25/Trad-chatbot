@@ -43,7 +43,7 @@ def chatbot_response(user_input):
     }
     intent_phrases = {phrase: intent for intent, phrases in intents.items() for phrase in phrases}
     match_result = process.extractOne(user_input, intent_phrases.keys(), scorer=fuzz.ratio)
-    if match_result and match_result[1] >= 50:
+    if match_result and match_result[1] >= 60:
         intent = intent_phrases[match_result[0]]
         if intent in responses:
             return random.choice(responses[intent])
